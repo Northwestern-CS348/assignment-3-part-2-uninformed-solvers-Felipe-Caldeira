@@ -80,6 +80,8 @@ class KBTest(unittest.TestCase):
 
         movables = th.getMovables()
         self.assertEqual(th.getGameState(), ((1,2,3),(),()))
+        
+        #breakpoint()
         th.makeMove(movables[0])
         self.assertEqual(th.getGameState(), ((2,3),(1,),()))
         th.reverseMove(movables[0])
@@ -94,7 +96,8 @@ class KBTest(unittest.TestCase):
         ]
         th.setWinningCondition(required, 'hanoi_all_forbidden.txt')
         self.assertFalse(th.isWon())
-
+        
+        #breakpoint()
         solver = SolverDFS(th,((),(),(1,2,3)))
 
         self.runPlayXSteps(solver, [
