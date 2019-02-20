@@ -64,6 +64,26 @@ class SolverDFS(UninformedSolver):
 class SolverBFS(UninformedSolver):
     def __init__(self, gameMaster, victoryCondition):
         super().__init__(gameMaster, victoryCondition)
+        self.queue = deque()
+        self.currSteps = []
+    
+    def enqueue(self, GS):
+        self.queue.append(GS)
+
+    def dequeue(self):
+        GS = self.queue.popleft()
+        self.visited[GS] = True
+        return GS
+    
+    def required_steps(self, GS):
+        steps = []
+        
+        curr_GS = self.currentState
+        while (curr_GS.parent):
+            steps.append(curr_GS.requiredMovable)
+            curr_GS = curr_GS.parent
+        return steps
+
 
     def solveOneStep(self):
         """
@@ -81,33 +101,16 @@ class SolverBFS(UninformedSolver):
         ### Student code goes here
         #breakpoint() 
               
-
-        def enqueue(GS):
-            self.visited["queue"].append(GS)
-
-        def dequeue():
-            GS = self.visited["queue"].popleft()
-            self.visited[GS] = True
-            return GS
-        
-        def required_steps(GS):
-            steps = []
-            curr_GS = self.currentState
-            while (curr_GS.parent):
-                steps.append(curr_GS.requiredMovable)
-                curr_GS = curr_GS.parent
-            return steps
-        
         def Main():
             # Dequeue to get the next GameState to visit
-            self.currentState = dequeue()
+            self.currentState = self.dequeue()
             #print(self.currentState.state)
             
             # This is a list of the required steps needed to get to this current GameState from the initial state (in reverse order, since it backtracks)
-            req_steps = required_steps(self.currentState)
+            req_steps = self.required_steps(self.currentState)
         
             # Here, we undo all the steps made by the visit to the previous node. These steps are stored in visited["currSteps"]
-            for step in self.visited["currSteps"]:
+            for step in self.currSteps:
                 self.gm.reverseMove(step)
             
             # Then we take the steps necessary to get to the current GameState (again, going through in reverse order since the first step needed is at the end of the list)
@@ -131,24 +134,21 @@ class SolverBFS(UninformedSolver):
                 new_state.parent = self.currentState
 
                 # Add it to queue if not seen before and not in queue already
-                if ((not new_state in self.visited) and (not new_state in self.visited["queue"])): 
-                    enqueue(new_state)
+                if ((not new_state in self.visited) and (not new_state in self.queue)): 
+                    self.enqueue(new_state)
 
                 # Undo the step to go back to currentState
                 self.gm.reverseMove(move_taken)
         
             # Store the steps so we can undo them for the next GameState explored.
-            self.visited["currSteps"] = req_steps
+            self.currSteps = req_steps
             return False
         
         
         # If this is the first step, initialize the queue and the currSteps. (Also run through the Main() once to be in sync with the tests' steps)
         if (not self.currentState.parent) and (not self.currentState.children):
             if self.currentState.state == self.victoryCondition: return True
-            self.visited["queue"] = deque()
-            self.visited["currSteps"] = []
-            
-            self.visited["queue"].append(self.currentState)
+            self.queue.append(self.currentState)
             Main()
         
         
