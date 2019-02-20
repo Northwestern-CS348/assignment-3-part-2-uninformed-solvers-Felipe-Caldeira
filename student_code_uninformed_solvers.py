@@ -1,5 +1,6 @@
 
 from solver import *
+from collections import deque
 
 class SolverDFS(UninformedSolver):
     def __init__(self, gameMaster, victoryCondition):
@@ -85,13 +86,10 @@ class SolverBFS(UninformedSolver):
             self.visited["queue"].append(GS)
 
         def dequeue():
-            GS = self.visited["queue"].pop(0)
-            self.visited["visited"].append(GS)
+            GS = self.visited["queue"].popleft()
+            self.visited[GS] = True
             return GS
-
-        def visited(GS):
-            return (GS in self.visited["visited"])
-       
+        
         def required_steps(GS):
             steps = []
             curr_GS = self.currentState
@@ -101,14 +99,18 @@ class SolverBFS(UninformedSolver):
             return steps
         
         def Main():
+            # Dequeue to get the next GameState to visit
             self.currentState = dequeue()
             #print(self.currentState.state)
-        
+            
+            # This is a list of the required steps needed to get to this current GameState from the initial state (in reverse order, since it backtracks)
             req_steps = required_steps(self.currentState)
         
+            # Here, we undo all the steps made by the visit to the previous node. These steps are stored in visited["currSteps"]
             for step in self.visited["currSteps"]:
                 self.gm.reverseMove(step)
-
+            
+            # Then we take the steps necessary to get to the current GameState (again, going through in reverse order since the first step needed is at the end of the list)
             for step in reversed(req_steps):
                 self.gm.makeMove(step)
 
@@ -129,7 +131,7 @@ class SolverBFS(UninformedSolver):
                 new_state.parent = self.currentState
 
                 # Add it to queue if not seen before and not in queue already
-                if ((not visited(new_state)) and (not new_state in self.visited["queue"])): 
+                if ((not new_state in self.visited) and (not new_state in self.visited["queue"])): 
                     enqueue(new_state)
 
                 # Undo the step to go back to currentState
@@ -140,12 +142,13 @@ class SolverBFS(UninformedSolver):
             return False
         
         
-        # If this is the first step, initialize the queue
+        # If this is the first step, initialize the queue and the currSteps. (Also run through the Main() once to be in sync with the tests' steps)
         if (not self.currentState.parent) and (not self.currentState.children):
             if self.currentState.state == self.victoryCondition: return True
-            self.visited["queue"] = [self.currentState]
-            self.visited["visited"] = [self.currentState]
+            self.visited["queue"] = deque()
             self.visited["currSteps"] = []
+            
+            self.visited["queue"].append(self.currentState)
             Main()
         
         
