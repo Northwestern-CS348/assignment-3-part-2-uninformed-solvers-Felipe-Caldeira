@@ -1,10 +1,11 @@
-
+import sys
 from solver import *
 from collections import deque
 
 class SolverDFS(UninformedSolver):
     def __init__(self, gameMaster, victoryCondition):
         super().__init__(gameMaster, victoryCondition)
+        #self.file = open("output.txt", 'w')
 
     def solveOneStep(self):
         """
@@ -27,6 +28,7 @@ class SolverDFS(UninformedSolver):
         
         # Mark the current state as visited so that we don't explore it again in the future!
         self.visited[self.currentState] = True
+        #self.file.write(str(self.currentState.state) + '\n')
 
         # Get the list of potential moves
         moves_list = self.gm.getMovables() if self.gm.getMovables() else []
@@ -66,11 +68,13 @@ class SolverBFS(UninformedSolver):
         super().__init__(gameMaster, victoryCondition)
         self.queue = deque()
         self.currSteps = []
+        #self.file = open("output.txt", 'w')
     
     def enqueue(self, GS):
         self.queue.append(GS)
 
     def dequeue(self):
+        if not self.queue: return False
         GS = self.queue.popleft()
         self.visited[GS] = True
         return GS
@@ -84,6 +88,26 @@ class SolverBFS(UninformedSolver):
             curr_GS = curr_GS.parent
         return steps
 
+    def make_necessary_steps(self, _req_steps):
+        index = 0
+        #breakpoint()
+        curr = list(reversed(self.currSteps))
+        new = list(reversed(_req_steps))
+        
+        if curr:
+            for i in range(len(curr)):
+                if curr[i] != new[i]:
+                    index = i
+                    break
+        
+            curr = curr[index:]
+            new = new[index:]
+        
+
+        for step in reversed(curr): self.gm.reverseMove(step)
+        for step in new: self.gm.makeMove(step)
+
+    
 
     def solveOneStep(self):
         """
@@ -104,18 +128,19 @@ class SolverBFS(UninformedSolver):
         def Main():
             # Dequeue to get the next GameState to visit
             self.currentState = self.dequeue()
+            #if not self.currentState: breakpoint()
             #print(self.currentState.state)
-            
+            #sys.stdout.flush()
+            #self.file.write(str(self.currentState.state) + '\n')
+
             # This is a list of the required steps needed to get to this current GameState from the initial state (in reverse order, since it backtracks)
             req_steps = self.required_steps(self.currentState)
         
             # Here, we undo all the steps made by the visit to the previous node. These steps are stored in visited["currSteps"]
-            for step in self.currSteps:
-                self.gm.reverseMove(step)
-            
             # Then we take the steps necessary to get to the current GameState (again, going through in reverse order since the first step needed is at the end of the list)
-            for step in reversed(req_steps):
-                self.gm.makeMove(step)
+            
+            self.make_necessary_steps(req_steps)
+
 
             # If this GameState's state is the winning condition, return True
             if self.currentState.state == self.victoryCondition:
